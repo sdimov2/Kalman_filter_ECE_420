@@ -1,20 +1,5 @@
-package com.example.milestone2kalman;/*
- * Copyright (c) 2022, Peter Abeles. All Rights Reserved.
- *
- * This file is part of Efficient Java Matrix Library (EJML).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com.example.milestone2kalman;
+
 
 
 
@@ -24,13 +9,7 @@ import org.ejml.interfaces.linsol.LinearSolverDense;
 
 import static org.ejml.dense.row.CommonOps_DDRM.*;
 
-/**
- * A Kalman filter that is implemented using the operations API, which is procedural. Much of the excessive
- * memory creation/destruction has been reduced from the KalmanFilterSimple. A specialized solver is
- * under to invert the SPD matrix.
- *
- * @author Peter Abeles
- */
+
 public class KalmanFilter {
     // kinematics description
     private DMatrixRMaj F, Q, H;
