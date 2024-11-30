@@ -1,5 +1,6 @@
 package com.example.milestone2kalman;
-
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
@@ -22,12 +23,11 @@ public class SensorReader extends Activity implements SensorEventListener {
     //initialize graphManager
     private GraphManager graphManager;
     private static final String TAG = "SensorReader";
+    private double delta_t;
 
-    //Kalman Filter parameters:
-    //the timestep used for the delta t
 
+    //Member variable for Kalman Filter
     private KalmanFilter kalmanFilter;
-    private SimpleMatrix F, H, Q, residualMatrix, x0;
 
     @Override
     public final void onCreate(Bundle savedInstanceState) {
@@ -44,50 +44,56 @@ public class SensorReader extends Activity implements SensorEventListener {
             finish(); // Close the activity if no accelerometer
         }
 
+        //define sampling rate!!
+
+        delta_t = 1/50;
+        //initialize Kalman Filter
+
+        //dimensions of my state:
+        int stateDim = 6; // Example state dimension (could be more based on your system)
+        int measurementDim = 2; // 2D accelerometer (X, Y)
+
+        //construct objects for F, Q, and H
+        DMatrixRMaj F = new DMatrixRMaj(stateDim, stateDim); // Identity matrix or your transition model
+        DMatrixRMaj Q = new DMatrixRMaj(stateDim, stateDim); // Process noise covariance matrix
+        DMatrixRMaj H = new DMatrixRMaj(measurementDim, stateDim); // Measurement matrix for 2D accelerometer
+
+        F.set(0, 0, 1); F.set(0, 2, delta_t); F.set(0, 4, 0.5 * delta_t * delta_t); // Position (X)
+        F.set(1, 1, 1); F.set(1, 3, delta_t); F.set(1, 5, 0.5 * delta_t * delta_t); // Position (Y)
+        F.set(2, 2, 1); F.set(2, 4, delta_t); // Velocity (X)
+        F.set(3, 3, 1); F.set(3, 5, delta_t); // Velocity (Y)
+        F.set(4, 4, 1);  // Acceleration (X)
+        F.set(5, 5, 1);  // Acceleration (Y)
+
+// Observation matrix (H) - accelerometer measurement
+        H.set(0, 4, 1); // Measurement for X acceleration
+        H.set(1, 5, 1); // Measurement for Y acceleration
+
+// Process noise covariance matrix (Q) - adjusted based on expected process noise
+        Q.set(0, 0, 0.001);
+        Q.set(1, 1, 0.001);
+        Q.set(2, 2, 0.01);
+        Q.set(3, 3, 0.01);
+        Q.set(4, 4, 0.1);
+        Q.set(5, 5, 0.1);
+
+        // Initialize the Kalman filter
+        kalmanFilter = new KalmanFilter();
+
+// Configure the filter with the state transition matrix (F), process noise covariance (Q), and measurement matrix (H)
+        kalmanFilter.configure(F, Q, H);
+
+        //Now you can initialize it!
+        DMatrixRMaj initialState = new DMatrixRMaj(stateDim, 1);  // Initialize state (e.g., velocity, position)
+        DMatrixRMaj initialCovariance = new DMatrixRMaj(stateDim, stateDim);
+        CommonOps_DDRM.setIdentity(initialCovariance);  // High uncertainty initially
+        kalmanFilter.setState(initialState, initialCovariance);
+
         GraphView graph = findViewById(R.id.graph);
         graphManager = new GraphManager(this, graph);
 
-        //initialize KF:
-        initializeKalmanFilter();
     }
 
-    private void initializeKalmanFilter() {
-        // Initialize F, H, Q, R matrices based on your system dynamics
-        double delta_t = 1.0 / 50.0; // You can initialize delta_t here (e.g., with an arbitrary value)
-
-        // Create your SimpleMatrix instances for Kalman Filter
-        SimpleMatrix F = new SimpleMatrix(new double[][] {
-                {1, 0, delta_t, 0, 0.5 * delta_t * delta_t, 0},
-                {0, 1, 0, delta_t, 0, 0.5 * delta_t * delta_t},
-                {0, 0, 1, 0, delta_t, 0},
-                {0, 0, 0, 1, 0, delta_t},
-                {0, 0, 0, 0, 1, 0},
-                {0, 0, 0, 0, 0, 1}
-        });
-
-        SimpleMatrix H = new SimpleMatrix(new double[][] {
-                {0, 0, 0, 0, 1, 0},
-                {0, 0, 0, 0, 0, 1}
-        });
-
-        SimpleMatrix Q = new SimpleMatrix(new double[][] {
-                {0.001, 0, 0, 0, 0, 0},
-                {0, 0.001, 0, 0, 0, 0},
-                {0, 0, 0.01, 0, 0, 0},
-                {0, 0, 0, 0.01, 0, 0},
-                {0, 0, 0, 0, 0.1, 0},
-                {0, 0, 0, 0, 0, 0.1}
-        });
-
-        SimpleMatrix residualMatrix = new SimpleMatrix(new double[][] {
-                {0.04, 0},
-                {0, 0.04}
-        });
-
-        SimpleMatrix x0 = SimpleMatrix.identity(6); // Initial state estimate
-
-        kalmanFilter = new KalmanFilter(F, H, null, Q, residualMatrix, null, x0);
-    }
 
     @Override
     public final void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -103,28 +109,30 @@ public class SensorReader extends Activity implements SensorEventListener {
             float accelY = event.values[1]; // Y-axis acceleration
             //float accelZ = event.values[2]; // Z-axis acceleration
 
-            // Log data for debugging
-            //Log.d(TAG, "Accel X: " + accelX + ", Y: " + accelY + ", Z: " + accelZ);
+            //Make prediction!
+            kalmanFilter.predict();
 
-            // Optionally save data to a file
-            //saveDataToFile(accelX, accelY, accelZ);
-            //graphManager.updateGraph(accelX, accelY, accelZ);
-            SimpleMatrix z = new SimpleMatrix(new double[][] {
-                    {accelX}, // Measurement for accelX
-                    {accelY}  // Measurement for accelY
-            });
-            SimpleMatrix u = new SimpleMatrix(2, 1); // Control input (assuming no control input for simplicity)
-            //Perform predict
-            SimpleMatrix predictedState = kalmanFilter.prediction(u);
-            // Perform Kalman filter update step
-            kalmanFilter.update(z);
 
-            // Retrieve the estimated values for accelX and accelY from the state estimate (x)
-            double predictedAccelX = predictedState.get(4, 0); // 5th entry in the vector (accelX)
-            double predictedAccelY = predictedState.get(5, 0); // 6th entry in the vector (accelY)
+            //handle update stage for Kalman!
+            //Need to define R matrices and Z vector for each time step!
+            DMatrixRMaj R = new DMatrixRMaj(2, 2); // 2x2 matrix for two measurements (X and Y accelerations)
+            CommonOps_DDRM.setIdentity(R);
+
+            DMatrixRMaj z = new DMatrixRMaj(2, 1); // 2x1 matrix for the measurements
+            z.set(0, 0, accelX); // Set X acceleration
+            z.set(1, 0, accelY); // Set Y acceleration
+
+            //the big task! pass it into the update function and make sure it doesn't fail!
+            kalmanFilter.update(z, R);
+
+            //get the state and actually read it!
+            DMatrixRMaj getState = kalmanFilter.getState();
+            // Access the 5th component (index 4) and 6th component (index 5)
+            double fifthComponent = getState.get(4, 0);  // 5th component of the state vector
+            double sixthComponent = getState.get(5, 0);  // 6th component of the state vector
 
             // Update graph with the predicted accelX and accelY values
-            graphManager.updateGraph((float)predictedAccelX, (float)predictedAccelY, 0); // Plot predicted accelX and accelY
+            graphManager.updateGraph((float) fifthComponent, (float) sixthComponent, 0); // Plot predicted accelX and accelY
 
         }
     }
