@@ -24,7 +24,8 @@ public class SensorReader extends Activity implements SensorEventListener {
     private GraphManager graphManager;
     private static final String TAG = "SensorReader";
     private double delta_t;
-
+    private static final float NS2S = 1.0f / 1000000000.0f;
+    private float timestamp;
 
     //Member variable for Kalman Filter
     private KalmanFilter kalmanFilter;
@@ -46,7 +47,8 @@ public class SensorReader extends Activity implements SensorEventListener {
 
         //define sampling rate!!
 
-        delta_t = 1/50;
+        //delta_t = 1/50;
+        delta_t=0;
         //initialize Kalman Filter
 
         //dimensions of my state:
@@ -133,6 +135,12 @@ public class SensorReader extends Activity implements SensorEventListener {
 
             // Update graph with the predicted accelX and accelY values
             graphManager.updateGraph((float) fifthComponent, (float) sixthComponent, 0); // Plot predicted accelX and accelY
+
+            if (timestamp != 0) {
+                final float dT = (event.timestamp - timestamp) * NS2S;
+            }
+            timestamp = event.timestamp;
+            System.out.printf("timestamp is %f%n", timestamp);
 
         }
     }
