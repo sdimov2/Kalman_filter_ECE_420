@@ -1,7 +1,7 @@
 package com.ece420.lab1;
 
-import android.content.Context;
 
+import android.content.Context;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
