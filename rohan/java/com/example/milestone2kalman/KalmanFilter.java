@@ -1,83 +1,100 @@
 package com.example.milestone2kalman;
-import org.ejml.simple.SimpleMatrix;
+
+
+
+
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
+import org.ejml.interfaces.linsol.LinearSolverDense;
+
+import static org.ejml.dense.row.CommonOps_DDRM.*;
 
 
 public class KalmanFilter {
-    private SimpleMatrix F; // State transition matrix
-    private SimpleMatrix B; // Control matrix
-    private SimpleMatrix H; // Observation matrix
-    private SimpleMatrix Q; // Process noise covariance
-    private SimpleMatrix residualMatrix; // Measurement noise covariance
-    private SimpleMatrix P; // Estimate error covariance
-    private SimpleMatrix x; // State estimate
+    // kinematics description
+    private DMatrixRMaj F, Q, H;
 
-    public KalmanFilter(SimpleMatrix F, SimpleMatrix H,
-                        SimpleMatrix B, SimpleMatrix Q,
-                        SimpleMatrix residualMatrix, SimpleMatrix P,
-                        SimpleMatrix x0){
-        if (F == null || H == null) {
-            throw new IllegalArgumentException("Set proper system dynamics.");
-        }
+    // system state estimate
+    private DMatrixRMaj x, P;
 
+    // these are predeclared for efficiency reasons
+    private DMatrixRMaj a, b;
+    private DMatrixRMaj y, S, S_inv, c, d;
+    private DMatrixRMaj K;
+
+    private LinearSolverDense<DMatrixRMaj> solver;
+
+     public void configure( DMatrixRMaj F, DMatrixRMaj Q, DMatrixRMaj H ) {
         this.F = F;
+        this.Q = Q;
         this.H = H;
 
-        // Manually handle defaults for optional parameters
-        if (B != null) {
-            this.B = B;
-        } else {
-            this.B = new SimpleMatrix(F.numRows(), 1);
-        }
+        int dimenX = F.numCols;
+        int dimenZ = H.numRows;
 
-        if (Q != null) {
-            this.Q = Q;
-        } else {
-            this.Q = SimpleMatrix.identity(F.numRows());
-        }
+        a = new DMatrixRMaj(dimenX, 1);
+        b = new DMatrixRMaj(dimenX, dimenX);
+        y = new DMatrixRMaj(dimenZ, 1);
+        S = new DMatrixRMaj(dimenZ, dimenZ);
+        S_inv = new DMatrixRMaj(dimenZ, dimenZ);
+        c = new DMatrixRMaj(dimenZ, dimenX);
+        d = new DMatrixRMaj(dimenX, dimenZ);
+        K = new DMatrixRMaj(dimenX, dimenZ);
 
-        if (residualMatrix != null) {
-            this.residualMatrix = residualMatrix;
-        } else {
-            this.residualMatrix = SimpleMatrix.identity(H.numRows());
-        }
+        x = new DMatrixRMaj(dimenX, 1);
+        P = new DMatrixRMaj(dimenX, dimenX);
 
-        if (P != null) {
-            this.P = P;
-        } else {
-            this.P = SimpleMatrix.identity(F.numRows());
-        }
-
-        if (x0 != null) {
-            this.x = x0;
-        } else {
-            this.x = new SimpleMatrix(F.numRows(), 1);
-        }
+        // covariance matrices are symmetric positive semi-definite
+        solver = LinearSolverFactory_DDRM.symmPosDef(dimenX);
     }
 
-    public SimpleMatrix prediction(SimpleMatrix u){
-        if (u == null) {
-            u = new SimpleMatrix(B.numCols(), 1);
-        }
-        //predict next state
-        x = F.mult(x).plus(B.mult(u));
-        //predict next state error covariance
-        P = F.mult(P).mult(F.transpose()).plus(Q);
-        return x;
+    public void setState( DMatrixRMaj x, DMatrixRMaj P ) {
+        this.x.setTo(x);
+        this.P.setTo(P);
     }
 
-    public void update(SimpleMatrix z){
-        //This is the measurement update
-        SimpleMatrix y = z.minus(H.mult(x)); // Innovation
-        SimpleMatrix S = residualMatrix.plus(H.mult(P).mult(H.transpose())); // Innovation covariance
-        SimpleMatrix K = P.mult(H.transpose()).mult(S.invert()); // Kalman gain
+    public void predict() {
+        // x = F x
+        mult(F, x, a);
+        x.setTo(a);
 
-        //identity matrix
-        SimpleMatrix I = SimpleMatrix.identity(F.numRows());
-
-        //update state estimate
-        x = x.plus(K.mult(y));
-
-        //update estimate covariance
-        P = (I.minus(K.mult(H))).mult(P).mult(I.minus(K.mult(H)).transpose()).plus(K.mult(residualMatrix).mult(K.transpose()));
+        // P = F P F' + Q
+        mult(F, P, b);
+        multTransB(b, F, P);
+        addEquals(P, Q);
     }
+
+   public void update( DMatrixRMaj z, DMatrixRMaj R ) {
+        // y = z - H x
+        mult(H, x, y);
+        subtract(z, y, y);
+
+        // S = H P H' + R
+        mult(H, P, c);
+        multTransB(c, H, S);
+        addEquals(S, R);
+
+        // K = PH'S^(-1)
+        if (!solver.setA(S)) throw new RuntimeException("Invert failed");
+        solver.invert(S_inv);
+        multTransA(H, S_inv, d);
+        mult(P, d, K);
+
+        // x = x + Ky
+        mult(K, y, a);
+        addEquals(x, a);
+
+        // P = (I-kH)P = P - (KH)P = P-K(HP)
+        mult(H, P, c);
+        mult(K, c, b);
+        subtractEquals(P, b);
+    }
+
+     public DMatrixRMaj getState() {
+         return x;
+     }
+
+   public DMatrixRMaj getCovariance() {
+         return P;
+     }
 }
