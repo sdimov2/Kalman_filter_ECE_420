@@ -110,7 +110,6 @@ public class SensorReader implements SensorEventListener {
 
     }
 
-
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         Log.d(TAG, "Sensor accuracy changed: " + accuracy);

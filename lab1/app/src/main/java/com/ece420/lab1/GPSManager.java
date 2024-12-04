@@ -19,6 +19,10 @@ import androidx.core.content.ContextCompat;
 public class GPSManager {
     private TextView textLongitude;
     private TextView textLatitude;
+    private Location previousLocation = null;
+    private double previousVelocityX = 0;
+    private double previousVelocityY = 0;
+    private long previousTimestamp = 0;
 
     public GPSManager(Context context, TextView textLatitude, TextView textLongitude, GPSGraphManager gpsGraphManager) {
         this.context = context;
@@ -64,15 +68,49 @@ public class GPSManager {
     }
 
 //    @Override
-    public void onLocationChanged(@NonNull Location location) {
-        currentLocation = location;
-        Log.d(TAG, "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
 
-        // Notify the listener
-        if (locationUpdateListener != null) {
-            locationUpdateListener.onLocationUpdated(location);
+public void onLocationChanged(@NonNull Location location) {
+    if (previousLocation != null) {
+        // Time difference in seconds
+        double deltaTime = (location.getTime() - previousTimestamp) / 1000.0;
+
+        if (deltaTime > 0) {
+            // Latitude/Longitude differences converted to meters
+            double latitudeDifference = Math.toRadians(location.getLatitude() - previousLocation.getLatitude());
+            double longitudeDifference = Math.toRadians(location.getLongitude() - previousLocation.getLongitude());
+            double earthRadius = 6371000; // Earth's radius in meters
+
+            double deltaX = earthRadius * Math.cos(Math.toRadians(previousLocation.getLatitude())) * longitudeDifference;
+            double deltaY = earthRadius * latitudeDifference;
+
+            // Calculate velocities
+            double velocityX = deltaX / deltaTime;
+            double velocityY = deltaY / deltaTime;
+
+            // Calculate accelerations
+            double accelerationX = (velocityX - previousVelocityX) / deltaTime;
+            double accelerationY = (velocityY - previousVelocityY) / deltaTime;
+
+            // Update the graph
+            gpsGraphManager.updateGraph((float) accelerationX, (float) accelerationY);
+
+            // Log the acceleration values
+            Log.d(TAG, "Acceleration X: " + accelerationX + ", Acceleration Y: " + accelerationY);
+
+            // Update previous values
+            previousVelocityX = velocityX;
+            previousVelocityY = velocityY;
         }
     }
+
+    // Update previous location and timestamp
+    previousLocation = location;
+    previousTimestamp = location.getTime();
+
+    // Update UI with current location
+    updateUI(location);
+}
+
 
 
     public GPSManager(Context context, GPSGraphManager gpsGraphManager) {
@@ -84,27 +122,17 @@ public class GPSManager {
 
     // Start GPS location updates
     public void startGPSUpdates() {
-        // Check if permissions are granted
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Location permissions not granted");
-            return; // Exit if permissions are not granted
+            return;
         }
 
-        // Initialize the location listener
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(@NonNull Location location) {
-                currentLocation = location;
-                Log.d(TAG, "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
-                // Update the UI
-                updateUI(location);
-                double latitude = location.getLatitude();
-                double longitude = location.getLongitude();
-                Log.d(TAG, "Location updated: " + latitude + ", " + longitude);
-
-                // Update the graph with the new data
-                gpsGraphManager.updateGraph(latitude, longitude);
+                // Delegate acceleration and graph update to the main `onLocationChanged` method
+                GPSManager.this.onLocationChanged(location);
             }
 
             @Override
@@ -121,24 +149,13 @@ public class GPSManager {
             }
         };
 
-        // Request updates from GPS_PROVIDER
-        locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                1000, // 1-second interval
-                1,    // 1-meter distance
-                locationListener
-        );
-
-        // Request updates from NETWORK_PROVIDER
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                1000, // 1-second interval
-                1,    // 1-meter distance
-                locationListener
-        );
+        // Request updates from GPS and Network providers
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, locationListener);
 
         Log.d(TAG, "GPS updates started");
     }
+
 
     // Stop GPS location updates
     public void stopGPSUpdates() {

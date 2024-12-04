@@ -53,7 +53,9 @@ public class PedometerSimple extends Activity {
         sensorReader = new SensorReader(this, graph);
 
         GraphView gpsGraph = findViewById(R.id.gpsGraph);
-        GPSGraphManager gpsGraphManager = new GPSGraphManager(this, gpsGraph);
+
+        GPSGraphManager gpsGraphManager = new GPSGraphManager(gpsGraph);
+
 
 
         // Initialize GPS Manager
