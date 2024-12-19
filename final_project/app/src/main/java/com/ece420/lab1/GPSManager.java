@@ -80,43 +80,43 @@ public void onLocationChanged(@NonNull Location location) {
         totalDistance += distance; // Update total distance
 //        textDistance.setText( totalDistance);
 //        textLatitude.setText("Latitude: " + location.getLatitude());
-        // Log the distance
+        // log the distance
         Log.d(TAG, "Distance traveled: " + distance + " meters, Total Distance: " + totalDistance + " meters");
 
         if (deltaTime > 0) {
-            // Latitude/Longitude differences converted to meters
+            // latitude/longitude differences converted to meters
             double latitudeDifference = Math.toRadians(location.getLatitude() - previousLocation.getLatitude());
             double longitudeDifference = Math.toRadians(location.getLongitude() - previousLocation.getLongitude());
-            double earthRadius = 6371000; // Earth's radius in meters
+            double earthRadius = 6371000; // earth's radius in meters
 
             double deltaX = earthRadius * Math.cos(Math.toRadians(previousLocation.getLatitude())) * longitudeDifference;
             double deltaY = earthRadius * latitudeDifference;
 
-            // Calculate velocities
+            //calculate velocities
             double velocityX = deltaX / deltaTime;
             double velocityY = deltaY / deltaTime;
 
-            // Calculate accelerations
+            //calculate accelerations
             double accelerationX = (velocityX - previousVelocityX) / deltaTime;
             double accelerationY = (velocityY - previousVelocityY) / deltaTime;
 
-            // Update the graph
+            //update the graph
             gpsGraphManager.updateGraph((float) accelerationX, (float) accelerationY);
 
-            // Log the acceleration values
+            //log the acceleration values
             Log.d(TAG, "Acceleration X: " + accelerationX + ", Acceleration Y: " + accelerationY);
 
-            // Update previous values
+            //update previous values
             previousVelocityX = velocityX;
             previousVelocityY = velocityY;
         }
     }
 
-    // Update previous location and timestamp
+    //update previous location and timestamp
     previousLocation = location;
     previousTimestamp = location.getTime();
 
-    // Update UI with current location
+    //update UI with current location
     updateUI(location);
 }
 
@@ -140,7 +140,7 @@ public void onLocationChanged(@NonNull Location location) {
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(@NonNull Location location) {
-                // Delegate acceleration and graph update to the main `onLocationChanged` method
+                //delegate acceleration and graph update to the main `onLocationChanged` method
                 GPSManager.this.onLocationChanged(location);
             }
 
@@ -158,7 +158,7 @@ public void onLocationChanged(@NonNull Location location) {
             }
         };
 
-        // Request updates from GPS and Network providers
+        //request updates from GPS and Network providers
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, locationListener);
 
@@ -166,7 +166,7 @@ public void onLocationChanged(@NonNull Location location) {
     }
 
 
-    // Stop GPS location updates
+    //stop GPS location updates
     public void stopGPSUpdates() {
         if (locationListener != null) {
             locationManager.removeUpdates(locationListener);
@@ -176,35 +176,36 @@ public void onLocationChanged(@NonNull Location location) {
     }
 
     public Location getCurrentLocation() {
-        // Check if location permissions are granted
+        //check if location permissions are granted
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Location permissions are not granted. Cannot get last known location.");
             return null; // Return null if permissions are missing
         }
 
-        // Try to get the last known location from GPS_PROVIDER
+        //try to get the last known location from GPS_PROVIDER
         Location lastKnownGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         if (lastKnownGPS != null) {
             Log.d(TAG, "Using last known GPS location: " + lastKnownGPS.getLatitude() + ", " + lastKnownGPS.getLongitude());
             return lastKnownGPS;
         }
 
-        // If GPS fails, try to get the last known location from NETWORK_PROVIDER
+        // if GPS fails, try to get the last known location from NETWORK_PROVIDER
         Location lastKnownNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         if (lastKnownNetwork != null) {
             Log.d(TAG, "Using last known Network location: " + lastKnownNetwork.getLatitude() + ", " + lastKnownNetwork.getLongitude());
             return lastKnownNetwork;
         }
 
-        // If no location is available, log a message
+        //if no location is available, log a message
         Log.d(TAG, "No last known location available from GPS or Network providers.");
-        return null; // No location data available
+        return null;
+        // No location data available
     }
 
 
 
-    // Check if permissions are granted
+    //check if permissions are granted
     public boolean hasLocationPermissions() {
         boolean permissionsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -212,7 +213,7 @@ public void onLocationChanged(@NonNull Location location) {
         return permissionsGranted;
     }
 
-    // Request permissions from the user
+    //request permissions from the user
     public void requestLocationPermissions(Activity activity) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
             Toast.makeText(context, "GPS access is required to determine your location.", Toast.LENGTH_LONG).show();

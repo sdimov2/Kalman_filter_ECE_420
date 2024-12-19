@@ -22,7 +22,7 @@ public class PedometerSimple extends Activity {
     private GPSManager gpsManager;
     private SensorReader sensorReader;
 
-    // Sensor variables
+    // sensor variables
 //    private SensorManager mSensorManager;
 
     // UI Text Views
@@ -35,21 +35,21 @@ public class PedometerSimple extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pedometer_simple);
 
-        // Keep screen on
+        //keep screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // Initialize TextViews
+        //initialize TextViews
 //        textStatus = findViewById(R.id.textStatus);
         textLatitude = findViewById(R.id.textLatitude);
         textLongitude = findViewById(R.id.textLongitude);
 
-//        // Initialize SensorManager
+//        //initialize SensorManager
 //        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
-        // Initialize GraphView
+        //initialize GraphView
         GraphView graph = findViewById(R.id.graph);
 
-        // Initialize SensorReader
+        //initialize SensorReader
         sensorReader = new SensorReader(this, graph);
 
         GraphView gpsGraph = findViewById(R.id.gpsGraph);
@@ -57,10 +57,10 @@ public class PedometerSimple extends Activity {
         GPSGraphManager gpsGraphManager = new GPSGraphManager(gpsGraph);
 
 
-        // Initialize GPS Manager
+        //initialize GPS Manager
         gpsManager = new GPSManager(this, textLatitude, textLongitude, gpsGraphManager);
 
-        // Request permissions and start GPS updates
+        //request permissions and start GPS updates
         if (gpsManager.hasLocationPermissions()) {
             gpsManager.startGPSUpdates();
         } else {

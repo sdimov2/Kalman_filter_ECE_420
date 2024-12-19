@@ -21,7 +21,7 @@ import java.io.IOException;
 public class SensorReader implements SensorEventListener {
     private static final String TAG = "SensorReader";
 
-    // Sensor and Graph variables
+    // sensor and Graph variables
     private final SensorManager sensorManager;
     private final Sensor mAccel;
     private GraphManager graphManager;
@@ -29,23 +29,23 @@ public class SensorReader implements SensorEventListener {
     private double delta_t;
     private static final float NS2S = 1.0f / 1000000000.0f;
 
-    // Kalman filter variables
+    // kalman filter variables
     private KalmanFilter kalmanFilter;
     private SimpleMatrix F, H, Q, residualMatrix, x0;
 
     public SensorReader(Context context, GraphView graph) {
-        // Initialize SensorManager and Accelerometer
+        // initialize SensorManager and Accelerometer
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         mAccel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
-        // Initialize GraphManager
+        // initialize GraphManager
         graphManager = new GraphManager(context, graph);
 
         if (mAccel == null) {
             Log.e(TAG, "No accelerometer available on this device.");
         }
 
-        // Initialize Kalman Filter
+        // initialize Kalman Filter
         initializeKalmanFilter();
     }
 
@@ -72,11 +72,11 @@ public class SensorReader implements SensorEventListener {
         F.set(4, 4, 1);  // Acceleration (X)
         F.set(5, 5, 1);  // Acceleration (Y)
 
-// Observation matrix (H) - accelerometer measurement
+// observation matrix (H) - accelerometer measurement
         H.set(0, 4, 1); // Measurement for X acceleration
         H.set(1, 5, 1); // Measurement for Y acceleration
 
-// Process noise covariance matrix (Q) - adjusted based on expected process noise
+//process noise covariance matrix (Q) - adjusted based on expected process noise
         Q.set(0, 0, 0.001);
         Q.set(1, 1, 0.001);
         Q.set(2, 2, 0.01);
@@ -87,10 +87,10 @@ public class SensorReader implements SensorEventListener {
         // Initialize the Kalman filter
         kalmanFilter = new KalmanFilter();
 
-// Configure the filter with the state transition matrix (F), process noise covariance (Q), and measurement matrix (H)
+//configure the filter with the state transition matrix (F), process noise covariance (Q), and measurement matrix (H)
         kalmanFilter.configure(F, Q, H);
 
-        //Now you can initialize it!
+        //now you can initialize it!
         DMatrixRMaj initialState = new DMatrixRMaj(stateDim, 1);  // Initialize state (e.g., velocity, position)
         DMatrixRMaj initialCovariance = new DMatrixRMaj(stateDim, stateDim);
         CommonOps_DDRM.setIdentity(initialCovariance);  // High uncertainty initially
@@ -101,11 +101,11 @@ public class SensorReader implements SensorEventListener {
         // Retrieve the state vector from the Kalman filter
         DMatrixRMaj stateVector = kalmanFilter.getState();
 
-// Extract the 5th and 6th components (indices 4 and 5) as predicted accelerations
+//extract the 5th and 6th components (indices 4 and 5) as predicted accelerations
         double predictedAccelX = stateVector.get(4, 0); // Predicted X acceleration
         double predictedAccelY = stateVector.get(5, 0); // Predicted Y acceleration
 
-// Update the graph with the predicted accelerations
+//update the graph with the predicted accelerations
 //        graphManager.updateGraph((float) predictedAccelX, (float) predictedAccelY, 0, (float) rawaccelX, (float) rawaccelY
 //                ,(float) GPSaccelX, (float) GPSaccelY
 //    ); // Third parameter can represent time or other metrics
@@ -125,29 +125,31 @@ public class SensorReader implements SensorEventListener {
             float accelY = event.values[1]; // Y-axis acceleration
             //float accelZ = event.values[2]; // Z-axis acceleration
 
-            //Make prediction!
+            //make prediction
             kalmanFilter.predict();
 
 
-            //handle update stage for Kalman!
-            //Need to define R matrices and Z vector for each time step!
+            //handle update stage for Kalman
+            //Need to define R matrices and Z vector for each time step
             DMatrixRMaj R = new DMatrixRMaj(2, 2); // 2x2 matrix for two measurements (X and Y accelerations)
             CommonOps_DDRM.setIdentity(R);
 
             DMatrixRMaj z = new DMatrixRMaj(2, 1); // 2x1 matrix for the measurements
-            z.set(0, 0, accelX); // Set X acceleration
-            z.set(1, 0, accelY); // Set Y acceleration
+            z.set(0, 0, accelX);
+            //set X acceleration
+            z.set(1, 0, accelY);
+            //set Y acceleration
 
             //the big task! pass it into the update function and make sure it doesn't fail!
             kalmanFilter.update(z, R);
 
             //get the state and actually read it!
             DMatrixRMaj getState = kalmanFilter.getState();
-            // Access the 5th component (index 4) and 6th component (index 5)
+            //access the 5th component (index 4) and 6th component (index 5)
             double fifthComponent = getState.get(4, 0);  // 5th component of the state vector
             double sixthComponent = getState.get(5, 0);  // 6th component of the state vector
 
-            // Update graph with the predicted accelX and accelY values
+            //update graph with the predicted accelX and accelY values
             graphManager.updateGraph((float) fifthComponent, (float) sixthComponent, 0, (float) accelX, (float) accelY); // Plot predicted accelX and accelY
 
             if (timestamp != 0) {
@@ -172,12 +174,12 @@ public class SensorReader implements SensorEventListener {
     }
 
     public void onResume() {
-        // Register the sensor listener
+        //register the sensor listener
         sensorManager.registerListener(this, mAccel, SensorManager.SENSOR_DELAY_GAME);
     }
 
     public void onPause() {
-        // Unregister the sensor listener
+        //unregister the sensor listener
         sensorManager.unregisterListener(this);
     }
 }

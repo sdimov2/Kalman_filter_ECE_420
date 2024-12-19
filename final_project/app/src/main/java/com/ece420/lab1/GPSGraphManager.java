@@ -36,18 +36,20 @@ public class GPSGraphManager {
 //        graphView.getViewport().setMaxY(10);
         graphView.getViewport().setScalable(true);
         graphView.getViewport().setScalableY(true);
+        graphView.getViewport().setMinX(0);
+        graphView.getViewport().setMaxX(200);
 
-        // Optional: Add labels
+        //labels
         graphView.getGridLabelRenderer().setHorizontalAxisTitle("Samples");
         graphView.getGridLabelRenderer().setVerticalAxisTitle("Acceleration (m/s²)");
     }
 
     public void updateGraph(float accelX, float accelY) {
-        // Add data points to the series
-        accelXSeries.appendData(new DataPoint(dataPointIndex, accelX), true, 50);
-        accelYSeries.appendData(new DataPoint(dataPointIndex, accelY), true, 50);
+        //add data points to the series
+        accelXSeries.appendData(new DataPoint(dataPointIndex, accelX), true, 200);
+        accelYSeries.appendData(new DataPoint(dataPointIndex, accelY), true, 200);
 
-        // Increment the data point index
+        //increment the data point index
         dataPointIndex++;
     }
 }

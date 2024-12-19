@@ -48,15 +48,16 @@ public class GraphManager {
         // Optional: enable scaling and scrolling
         graph.getViewport().setScalable(true);
         graph.getViewport().setScalableY(true);
+        graph.getViewport().setMinX(0);
+        graph.getViewport().setMaxX(200);
     }
 
     public void updateGraph(float accelX, float accelY, float accelZ, float rawaccelX, float rawaccelY) {
         // Add data points to the series
-        seriesX.appendData(new DataPoint(timeIndex, accelX), true, 50);
-        seriesY.appendData(new DataPoint(timeIndex, accelY), true, 50);
-
-        rseriesX.appendData(new DataPoint(timeIndex, rawaccelX), true, 50);
-        rseriesY.appendData(new DataPoint(timeIndex, rawaccelY), true, 50);
+        seriesX.appendData(new DataPoint(timeIndex, accelX), true, 200);
+        seriesY.appendData(new DataPoint(timeIndex, accelY), true, 200);
+        rseriesX.appendData(new DataPoint(timeIndex, rawaccelX), true, 200);
+        rseriesY.appendData(new DataPoint(timeIndex, rawaccelY), true, 200);
 
 //        seriesX.appendData(new DataPoint(timeIndex, GPSaccelX), true, 50);
 //        seriesY.appendData(new DataPoint(timeIndex, GPSaccelY), true, 50);

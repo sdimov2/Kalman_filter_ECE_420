@@ -11,13 +11,13 @@ import static org.ejml.dense.row.CommonOps_DDRM.*;
 
 
 public class KalmanFilter {
-    // kinematics description
+    //kinematics description
     private DMatrixRMaj F, Q, H;
 
-    // system state estimate
+    //system state estimate
     private DMatrixRMaj x, P;
 
-    // these are predeclared for efficiency reasons
+    //these are predeclared for efficiency reasons
     private DMatrixRMaj a, b;
     private DMatrixRMaj y, S, S_inv, c, d;
     private DMatrixRMaj K;
