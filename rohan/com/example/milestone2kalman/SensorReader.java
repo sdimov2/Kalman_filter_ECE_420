@@ -61,7 +61,7 @@ public class SensorReader extends Activity implements SensorEventListener {
     float totalmsesumfilt;
     float currentmsefilt;
 
-    //Member variable for Kalman Filter
+    //member variable for Kalman Filter
     private KalmanFilter kalmanFilter;
 
 
@@ -81,11 +81,11 @@ public class SensorReader extends Activity implements SensorEventListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize SensorManager and accelerometer sensor
+        //initialize SensorManager and accelerometer sensor
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
-        // Check if the accelerometer is available
+        //check if the accelerometer is available
         if (mAccel == null) {
             Toast.makeText(this, "Accelerometer not available on this device", Toast.LENGTH_SHORT).show();
             finish(); // Close the activity if no accelerometer
@@ -114,11 +114,11 @@ public class SensorReader extends Activity implements SensorEventListener {
         F.set(4, 4, 1);  // Acceleration (X)
         F.set(5, 5, 1);  // Acceleration (Y)
 
-// Observation matrix (H) - accelerometer measurement
+//observation matrix (H) - accelerometer measurement
         H.set(0, 4, 1); // Measurement for X acceleration
         H.set(1, 5, 1); // Measurement for Y acceleration
 
-// Process noise covariance matrix (Q) - adjusted based on expected process noise
+//process noise covariance matrix (Q) - adjusted based on expected process noise
         Q.set(0, 0, 0.001);
         Q.set(1, 1, 0.001);
         Q.set(2, 2, 0.01);
@@ -126,10 +126,10 @@ public class SensorReader extends Activity implements SensorEventListener {
         Q.set(4, 4, 0.1);
         Q.set(5, 5, 0.1);
 
-        // Initialize the Kalman filter
+        //initialize the Kalman filter
         kalmanFilter = new KalmanFilter();
 
-// Configure the filter with the state transition matrix (F), process noise covariance (Q), and measurement matrix (H)
+//configure the filter with the state transition matrix (F), process noise covariance (Q), and measurement matrix (H)
         kalmanFilter.configure(F, Q, H);
 
         //Now you can initialize it!
@@ -155,7 +155,7 @@ public class SensorReader extends Activity implements SensorEventListener {
 
     @Override
     public final void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Handle sensor accuracy changes if needed
+        //handle sensor accuracy changes if needed
         Log.d(TAG, "Sensor accuracy changed: " + accuracy);
     }
 
@@ -173,7 +173,7 @@ public class SensorReader extends Activity implements SensorEventListener {
                         timesteps++;
 
                     }
-                    //Make prediction!
+                    //make prediction
                     kalmanFilter.predict();
                     //handle update stage for Kalman!
                     //Need to define R matrices and Z vector for each time step!
@@ -214,7 +214,7 @@ public class SensorReader extends Activity implements SensorEventListener {
             //Log.d("myTag", "Kalman'ed XAccel: " + fifthComponent);
             //Log.d("myTag", "Kalman'ed YAccel: " + sixthComponent);
 
-            // Update graph with the predicted accelX and accelY values
+            //update graph with the predicted accelX and accelY values
             //graphManager.updateGraph((float) fifthComponent, (float) sixthComponent); // Plot predicted accelX and accelY
             graphManager.updateGraph(currentmseraw, currentmsefilt);
 
@@ -237,14 +237,14 @@ public class SensorReader extends Activity implements SensorEventListener {
         // Register the sensor listener with desired delay
         sensorManager.registerListener(this, mAccel, SensorManager.SENSOR_DELAY_GAME);
 
-        // Initialize location manager and register location listener
+        // initialize location manager and register location listener
 
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Unregister the sensor listener to save power
+        // unregister the sensor listener to save power
 
 
 
